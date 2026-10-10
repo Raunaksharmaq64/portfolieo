@@ -339,8 +339,8 @@ export default function App() {
       activeCaseStudyId === 'voice-agent'
         ? 'voiceAgent'
         : activeCaseStudyId === 'whatsapp-automation'
-        ? 'whatsappAutomation'
-        : 'leadhunter';
+          ? 'whatsappAutomation'
+          : 'leadhunter';
     const media = getProjectMedia(import.meta.env.BASE_URL)[mediaKey] || [];
     const deployments = deploymentsData[mediaKey] || [];
 
@@ -434,7 +434,7 @@ export default function App() {
               <a href="#experience" className={`nav-link ${activeSection === 'experience' ? 'active' : ''}`}>Experience</a>
             </li>
             <li className="nav-dropdown-item" ref={navDropdownRef}>
-              <button 
+              <button
                 type="button"
                 className={`nav-dropdown-btn ${isMoreActive ? 'active' : ''}`}
                 onClick={() => setNavDropdownOpen(!navDropdownOpen)}
@@ -540,16 +540,16 @@ export default function App() {
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
             <i className={theme === 'light' ? 'fas fa-sun' : 'fas fa-moon'}></i>
           </button>
-          
+
           <div className="resume-btn-group">
             <a href={import.meta.env.BASE_URL + "resume.html"} className="btn-resume-view btn-resume-compact" target="_blank" rel="noopener noreferrer">
               <i className="fas fa-file-alt"></i> Resume
             </a>
-            <a 
-              href={import.meta.env.BASE_URL + "assets/images/Raunak_Resume.pdf"} 
-              className="btn-resume btn-resume-download-pill" 
-              download="Raunak_Sharma_Resume.pdf" 
-              title="Download Resume PDF" 
+            <a
+              href={import.meta.env.BASE_URL + "assets/images/Raunak_Resume.pdf"}
+              className="btn-resume btn-resume-download-pill"
+              download="Raunak_Sharma_Resume.pdf"
+              title="Download Resume PDF"
               aria-label="Download Resume PDF"
             >
               <i className="fas fa-download"></i>
@@ -1032,9 +1032,9 @@ export default function App() {
                   <TiltCard className={`project-card card-${project.category}`} key={project.id} onClick={() => setSelectedProject(project)}>
                     {/* Visual Card Banner Thumbnail */}
                     <div className="project-card-image-wrap">
-                      <img 
-                        src={resolveAssetPath(project.thumbnail)} 
-                        alt={`${project.title} Preview Banner`} 
+                      <img
+                        src={resolveAssetPath(project.thumbnail)}
+                        alt={`${project.title} Preview Banner`}
                         className="project-card-img"
                         loading="lazy"
                         onError={(e) => handleImageError(e)}
@@ -1109,8 +1109,8 @@ export default function App() {
 
       {/* 9. Enhanced Project Details Case Study Modal */}
       {selectedProject && (
-        <div 
-          className="modal-overlay active" 
+        <div
+          className="modal-overlay active"
           onClick={(e) => e.target.classList.contains('modal-overlay') && setSelectedProject(null)}
           role="dialog"
           aria-modal="true"
@@ -1119,15 +1119,15 @@ export default function App() {
           <div className="modal-content modal-content-wide">
             {/* Visual Header Banner */}
             <div className="modal-banner-wrap">
-              <img 
-                src={resolveAssetPath(selectedProject.thumbnail)} 
-                alt={`${selectedProject.title} header banner`} 
+              <img
+                src={resolveAssetPath(selectedProject.thumbnail)}
+                alt={`${selectedProject.title} header banner`}
                 className="modal-banner-img"
                 onError={(e) => handleImageError(e)}
               />
-              <button 
-                className="modal-close-btn" 
-                onClick={() => setSelectedProject(null)} 
+              <button
+                className="modal-close-btn"
+                onClick={() => setSelectedProject(null)}
                 aria-label="Close modal"
               >
                 &times;
@@ -1232,8 +1232,8 @@ export default function App() {
 
                 {filteredProjects.length > 1 && (
                   <div className="modal-nav-controls">
-                    <button 
-                      className="modal-nav-btn" 
+                    <button
+                      className="modal-nav-btn"
                       onClick={() => prevProject && setSelectedProject(prevProject)}
                       title={`Previous: ${prevProject?.title}`}
                       aria-label="Previous project"
@@ -1243,8 +1243,8 @@ export default function App() {
                     <span className="modal-nav-counter">
                       {currentModalIndex + 1} / {filteredProjects.length}
                     </span>
-                    <button 
-                      className="modal-nav-btn" 
+                    <button
+                      className="modal-nav-btn"
                       onClick={() => nextProject && setSelectedProject(nextProject)}
                       title={`Next: ${nextProject?.title}`}
                       aria-label="Next project"
@@ -1688,7 +1688,7 @@ export default function App() {
       {/* 12. Footer */}
       <footer className="footer">
         <div className="container">
-          <p>&copy; 2026 Raunak Sharma. Crafted with precision & purpose.</p>
+          <p>&copy; 2026 Raunak Sharma. Crafted with precision & purpose. Last update on september 2026</p>
         </div>
       </footer>
       <DevTerminal onNavigateCaseStudy={handleSelectCaseStudy} />

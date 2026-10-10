@@ -37,7 +37,7 @@ function waitForServer(url, timeoutMs = 20000) {
   server.stdout.on('data', (d) => process.stdout.write(`[preview] ${d}`));
   server.stderr.on('data', (d) => process.stderr.write(`[preview err] ${d}`));
 
-  const baseUrl = 'http://localhost:4173/portfolieo_raunak/';
+  const baseUrl = 'http://localhost:4173/portfolieo/';
 
   try {
     await waitForServer(baseUrl, 30000);

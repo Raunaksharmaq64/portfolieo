@@ -9,7 +9,7 @@ export const candidateProfile = {
   headline: "AI Automation & Full-Stack Developer | AI Agents, LLM Integrations & SaaS",
   location: "Bhopal, Madhya Pradesh, India",
   email: "raunaksharma88630mt@gmail.com",
-  portfolioUrl: "https://raunaksharmaq64.github.io/portfolieo_raunak/",
+  portfolioUrl: "https://raunaksharmaq64.github.io/portfolieo/",
   githubUrl: "https://github.com/Raunaksharmaq64",
   linkedinUrl: "https://www.linkedin.com/in/raunak-sharma-q64/",
   education: {
