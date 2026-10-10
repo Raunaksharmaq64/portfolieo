@@ -15,6 +15,10 @@ import TiltCard from './components/TiltCard';
 import InteractiveBackground from './components/InteractiveBackground';
 import DevTerminal from './components/DevTerminal';
 import ScrollReveal from './components/ScrollReveal';
+import AskRaunakAI from './components/ai-assistant/AskRaunakAI';
+import AgentPlayground from './components/playground/AgentPlayground';
+import './styles/ai-assistant.css';
+import './styles/agent-playground.css';
 
 const allCaseStudies = [leadhunterCaseStudy, voiceAgentCaseStudy, whatsappAutomationCaseStudy];
 
@@ -47,7 +51,7 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
   const [activeCaseStudyId, setActiveCaseStudyId] = useState(null);
 
-  const isMoreActive = ['services', 'skills', 'certifications', 'testimonials', 'articles'].includes(activeSection);
+  const isMoreActive = ['services', 'skills', 'certifications', 'testimonials', 'articles', 'agent-playground'].includes(activeSection);
 
   const categoryCounts = {
     all: projectsData.length,
@@ -352,6 +356,7 @@ export default function App() {
           allStudies={allCaseStudies}
         />
         <DevTerminal onNavigateCaseStudy={handleSelectCaseStudy} />
+        <AskRaunakAI onNavigateCaseStudy={handleSelectCaseStudy} />
       </>
     );
   }
@@ -440,6 +445,9 @@ export default function App() {
               </button>
               {navDropdownOpen && (
                 <div className="nav-dropdown-menu">
+                  <a href="#agent-playground" className={`dropdown-link ${activeSection === 'agent-playground' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-play-circle" style={{ color: '#10b981' }}></i> <span>Agents Live Sandbox</span>
+                  </a>
                   <a href="#services" className={`dropdown-link ${activeSection === 'services' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
                     <i className="fas fa-laptop-code"></i> <span>Services</span>
                   </a>
@@ -489,6 +497,11 @@ export default function App() {
                 <li>
                   <a href="#featured-products" className={`nav-link ${activeSection === 'featured-products' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                     <i className="fas fa-star" style={{ color: '#fbbf24' }}></i> Flagship Products
+                  </a>
+                </li>
+                <li>
+                  <a href="#agent-playground" className={`nav-link ${activeSection === 'agent-playground' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                    <i className="fas fa-play-circle" style={{ color: '#10b981' }}></i> Try Agents Live
                   </a>
                 </li>
                 <li>
@@ -923,6 +936,9 @@ export default function App() {
         flagshipList={flagshipProjects}
         onSelectCaseStudy={handleSelectCaseStudy}
       />
+
+      {/* 7.8. Interactive AI Agent Playground ("Try the Agents Live") */}
+      <AgentPlayground />
 
       {/* 8. Projects Section with 3D Tilt Cards */}
       <section id="projects" className="projects-section">
@@ -1676,6 +1692,7 @@ export default function App() {
         </div>
       </footer>
       <DevTerminal onNavigateCaseStudy={handleSelectCaseStudy} />
+      <AskRaunakAI onNavigateCaseStudy={handleSelectCaseStudy} />
     </>
   );
 }

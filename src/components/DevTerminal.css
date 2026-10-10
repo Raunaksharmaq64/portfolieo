@@ -2,7 +2,7 @@
 .dev-terminal-container {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
+  left: 2rem;
   z-index: 999;
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
 }
@@ -580,5 +580,24 @@ body.light-theme .terminal-suggestion-pill:hover {
   background: #d1fae5;
   border-color: #059669;
   color: #065f46;
+}
+
+@media (max-width: 640px) {
+  .dev-terminal-container {
+    bottom: 1.25rem;
+    left: 1.25rem;
+  }
+
+  .terminal-floating-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .terminal-window {
+    width: calc(100vw - 2.5rem);
+    max-width: 480px;
+    height: 420px;
+    left: 0;
+  }
 }
 
