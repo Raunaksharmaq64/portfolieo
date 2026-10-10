@@ -8,6 +8,7 @@ export default function AgentPlayground() {
 
   return (
     <section id="agent-playground" className="agent-playground-section">
+      <div className="playground-glow"></div>
       <div className="container">
         <ScrollReveal>
           <div className="section-header">
