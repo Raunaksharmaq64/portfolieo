@@ -15,16 +15,20 @@ import fs from 'fs';
   await page.goto(`file://${filePath}`, { waitUntil: 'networkidle' });
   
   // Compile to PDF
-  console.log('Generating PDF...');
+  console.log('Generating PDF (A4 format)...');
+  // Emulate screen or print
+  await page.emulateMedia({ media: 'print' });
+
   const pdfBuffer = await page.pdf({
-    format: 'Letter',
+    format: 'A4',
+    printBackground: true,
+    preferCSSPageSize: true,
     margin: {
-      top: '0.4in',
-      bottom: '0.4in',
-      left: '0.4in',
-      right: '0.4in'
-    },
-    printBackground: true
+      top: '0px',
+      bottom: '0px',
+      left: '0px',
+      right: '0px'
+    }
   });
   
   fs.writeFileSync('Raunak_Sharma_Resume.pdf', pdfBuffer);

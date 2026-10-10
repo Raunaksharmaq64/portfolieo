@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { projectsData } from '../data/projectsData';
+import { projectsData, flagshipProjects } from '../data/projectsData';
 import './DevTerminal.css';
 
-export default function DevTerminal() {
+export default function DevTerminal({ onNavigateCaseStudy }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -24,7 +24,7 @@ export default function DevTerminal() {
   const inputRef = useRef(null);
 
   const availableCmds = [
-    'about', 'skills', 'projects', 'contact', 'resume', 'resume view', 'theme', 
+    'about', 'skills', 'projects', 'featured', 'casestudy', 'flagship', 'contact', 'resume', 'resume view', 'theme', 
     'locate', 'visitor', 'socials', 'neofetch', 'matrix', 'hire', 'sudo', 'game', 
     'game guess', 'game coin', 'game dice', 'coffee', 'quote', 'weather', 'cat', 
     'history', 'cls', 'clear', 'exit', 'help', 'man'
@@ -108,8 +108,18 @@ export default function DevTerminal() {
     localStorage.setItem('portfolioTerminalOpened', 'true');
   };
 
-  // Handle Tab and Up/Down Arrow keys
+  // Handle Tab, Escape, and Up/Down Arrow keys
   const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (isMatrixActive) {
+        setIsMatrixActive(false);
+      } else {
+        setIsOpen(false);
+      }
+      return;
+    }
+
     if (isMatrixActive) {
       setIsMatrixActive(false);
       return;
@@ -299,12 +309,15 @@ export default function DevTerminal() {
         break;
       case 'neofetch':
         newLines.push(
-          { text: "      /\\_/\\       OS: RaunakOS v1.5.0", type: 'output' },
-          { text: "     ( o.o )      College: LNCTS, Bhopal", type: 'output' },
-          { text: "      > ^ <       Degree: B.Tech CSE (2023 - 2029 Expected)", type: 'output' },
-          { text: "                  Uptime: 2 hours, 18 minutes", type: 'output' },
-          { text: "                  Shell: RaunakBash v1.5", type: 'output' },
-          { text: "                  Status: Open to Work 💼", type: 'output' }
+          { text: "   .-.      PORTFOLIO: Raunak's Engineering Showcase", type: 'output' },
+          { text: "  (o.o)     AUTHOR:    Raunak Sharma", type: 'output' },
+          { text: "  |=|/      ROLE:      Full-Stack & AI Systems Developer", type: 'output' },
+          { text: "            COLLEGE:   LNCTS Bhopal (B.Tech CSE)", type: 'output' },
+          { text: "            PROJECTS:  20 Total (3 Flagship Products, 17 Standard)", type: 'output' },
+          { text: "            STACK:     React 18, Vite 5, JavaScript, Python, Java, SQL", type: 'output' },
+          { text: "            CERTS:     AWS, JPMorgan Chase, Siemens, HackerRank", type: 'output' },
+          { text: "            SHELL:     RaunakOS DevTerminal v1.5", type: 'system' },
+          { text: "            STATUS:    Available for Roles & Collaborations 🚀", type: 'matrix' }
         );
         break;
       case 'about':
@@ -343,10 +356,10 @@ export default function DevTerminal() {
               { text: `Category:    ${found.category.toUpperCase()}`, type: 'output' },
               { text: `Tagline:     ${found.tagline}`, type: 'output' },
               { text: `Description: ${found.description}`, type: 'output' },
-              { text: `Tech Stack:  ${found.techStack.join(', ')}`, type: 'output' },
+              { text: `Tech Stack:  ${(found.techStack || []).join(', ')}`, type: 'output' },
               { text: `Key Features:`, type: 'output' }
             );
-            found.keyFeatures.forEach(feat => {
+            (found.keyFeatures || []).forEach(feat => {
               newLines.push({ text: `  - ${feat}`, type: 'cmd-desc' });
             });
             if (found.liveLink) newLines.push({ text: `Live Demo:   ${found.liveLink}`, type: 'output' });
@@ -354,6 +367,45 @@ export default function DevTerminal() {
             newLines.push({ text: `=================================================`, type: 'system' });
           } else {
             newLines.push({ text: `Project '${arg}' not found. Type 'projects' to view the numbers directory.`, type: 'error' });
+          }
+        }
+        break;
+      case 'featured':
+      case 'flagship':
+        newLines.push({ text: "================ 🌟 FLAGSHIP ADVANCED PRODUCTS ================", type: 'hire' });
+        (flagshipProjects || []).forEach((fp, idx) => {
+          const techs = (fp.techStack || fp.technologies || []).slice(0, 4).join(', ');
+          newLines.push({ text: `  [${idx + 1}] ${fp.id} — ${fp.title}`, type: 'system' });
+          newLines.push({ text: `      Tagline: ${fp.tagline}`, type: 'output' });
+          newLines.push({ text: `      Tech:    ${techs}`, type: 'cmd-desc' });
+        });
+        newLines.push({ text: "---------------------------------------------------------------", type: 'hire' });
+        newLines.push({ text: "Type 'casestudy leadhunter', 'casestudy voice-agent', or 'casestudy whatsapp-automation' to launch deep interactive case study.", type: 'matrix' });
+        break;
+      case 'casestudy':
+        if (!arg) {
+          newLines.push({ text: "Usage: casestudy <leadhunter | voice-agent | whatsapp-automation>", type: 'error' });
+        } else {
+          const targetId = arg.toLowerCase().trim();
+          const match = (flagshipProjects || []).find(fp => 
+            fp.id.toLowerCase() === targetId || 
+            (targetId === '1' && fp.id === 'leadhunter') ||
+            (targetId === '2' && fp.id === 'voice-agent') ||
+            (targetId === '3' && fp.id === 'whatsapp-automation') ||
+            (targetId.includes('lead') && fp.id === 'leadhunter') ||
+            (targetId.includes('voice') && fp.id === 'voice-agent') ||
+            (targetId.includes('what') && fp.id === 'whatsapp-automation')
+          );
+          if (match) {
+            newLines.push({ text: `🚀 Launching story-driven case study for: ${match.title}...`, type: 'matrix' });
+            if (typeof onNavigateCaseStudy === 'function') {
+              setTimeout(() => {
+                onNavigateCaseStudy(match.id);
+                setIsOpen(false);
+              }, 400);
+            }
+          } else {
+            newLines.push({ text: `Case study '${arg}' not found. Available: leadhunter, voice-agent, whatsapp-automation`, type: 'error' });
           }
         }
         break;
@@ -378,24 +430,50 @@ export default function DevTerminal() {
           document.body.removeChild(link);
         }
         break;
-      case 'theme':
-        newLines.push({ text: "Toggling visual theme...", type: 'system' });
+      case 'theme': {
         const themeBtn = document.querySelector('.theme-toggle');
         if (themeBtn) {
           themeBtn.click();
+          const isLight = document.body.classList.contains('light-theme') || document.documentElement.getAttribute('data-theme') === 'light';
+          newLines.push({ text: `🎨 Theme switched to: ${isLight ? 'Light Mode' : 'Obsidian Dark Mode'}`, type: 'system' });
+        } else {
+          newLines.push({ text: "Theme toggle switch not available on current screen.", type: 'error' });
         }
         break;
+      }
       case 'locate':
         if (!arg) {
-          newLines.push({ text: "Usage: locate <section_name> (e.g. locate projects, locate services, locate contact)", type: 'error' });
+          newLines.push({ text: "Usage: locate <section_name> (e.g. locate featured, locate creations, locate contact)", type: 'error' });
         } else {
-          const sectionId = arg === 'home' ? 'hero' : arg;
+          const aliasMap = {
+            'home': 'hero',
+            'hero': 'hero',
+            'featured': 'featured-products',
+            'flagship': 'featured-products',
+            'products': 'featured-products',
+            'creations': 'projects',
+            'projects': 'projects',
+            'works': 'projects',
+            'about': 'about',
+            'skills': 'skills',
+            'services': 'services',
+            'experience': 'experience',
+            'certifications': 'certifications',
+            'certs': 'certifications',
+            'testimonials': 'testimonials',
+            'reviews': 'testimonials',
+            'articles': 'articles',
+            'blog': 'articles',
+            'github': 'github-showcase',
+            'contact': 'contact'
+          };
+          const sectionId = aliasMap[arg] || arg;
           const targetSection = document.getElementById(sectionId);
           if (targetSection) {
-            newLines.push({ text: `Locating section '${sectionId}'...`, type: 'system' });
+            newLines.push({ text: `📍 Navigating to section #${sectionId}...`, type: 'system' });
             targetSection.scrollIntoView({ behavior: 'smooth' });
           } else {
-            newLines.push({ text: `Section '${sectionId}' not found. Try: about, services, skills, projects, experience, certifications, contact.`, type: 'error' });
+            newLines.push({ text: `Section '${arg}' not found. Available targets: featured, creations, about, skills, services, experience, certifications, testimonials, articles, contact.`, type: 'error' });
           }
         }
         break;
@@ -487,12 +565,12 @@ export default function DevTerminal() {
             <div className="terminal-quick-actions">
               <span className="quick-actions-label">Quick:</span>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('help')}>help</button>
+              <button type="button" className="terminal-chip" onClick={() => handleCommand('featured')}>featured</button>
+              <button type="button" className="terminal-chip" onClick={() => handleCommand('projects')}>projects</button>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('hire')}>hire</button>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('matrix')}>matrix</button>
-              <button type="button" className="terminal-chip" onClick={() => handleCommand('projects')}>projects</button>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('game')}>game</button>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('skills')}>skills</button>
-              <button type="button" className="terminal-chip" onClick={() => handleCommand('weather')}>weather</button>
               <button type="button" className="terminal-chip" onClick={() => handleCommand('cls')}>clear</button>
             </div>
           )}
@@ -520,6 +598,16 @@ export default function DevTerminal() {
                   </tr>
                 </thead>
                 <tbody>
+                  <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td style={{ padding: '4px 0' }}><code>featured</code></td>
+                    <td style={{ padding: '4px 0' }}>Lists 3 flagship advanced products</td>
+                    <td style={{ padding: '4px 0' }}><code>featured</code></td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <td style={{ padding: '4px 0' }}><code>casestudy &lt;id&gt;</code></td>
+                    <td style={{ padding: '4px 0' }}>Opens deep product case study page</td>
+                    <td style={{ padding: '4px 0' }}><code>casestudy leadhunter</code></td>
+                  </tr>
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '4px 0' }}><code>matrix</code></td>
                     <td style={{ padding: '4px 0' }}>Falling green Matrix code rain</td>
@@ -578,7 +666,7 @@ export default function DevTerminal() {
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '4px 0' }}><code>locate &lt;sec&gt;</code></td>
                     <td style={{ padding: '4px 0' }}>Scrolls to section on the page</td>
-                    <td style={{ padding: '4px 0' }}><code>locate services</code></td>
+                    <td style={{ padding: '4px 0' }}><code>locate featured</code></td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '4px 0' }}><code>resume</code> / <code>resume view</code></td>
@@ -610,6 +698,29 @@ export default function DevTerminal() {
                   {line.text}
                 </div>
               ))}
+              {/* Autocomplete Suggestions Bar */}
+              {inputVal.trim().length > 0 && availableCmds.filter(c => c.startsWith(inputVal.trim().toLowerCase()) && c !== inputVal.trim().toLowerCase()).length > 0 && (
+                <div className="terminal-suggestions-bar">
+                  <span className="suggestions-label">Suggestions (Tab):</span>
+                  {availableCmds
+                    .filter(c => c.startsWith(inputVal.trim().toLowerCase()) && c !== inputVal.trim().toLowerCase())
+                    .slice(0, 5)
+                    .map(sug => (
+                      <button
+                        key={sug}
+                        type="button"
+                        className="terminal-suggestion-pill"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInputVal(sug);
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                </div>
+              )}
               <form onSubmit={(e) => { e.preventDefault(); handleCommand(inputVal); }} className="terminal-input-line">
                 <span className="terminal-prompt">guest@raunak-pc:~$</span>
                 <input

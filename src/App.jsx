@@ -1,11 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { projectsData } from './data/projectsData';
+import { projectsData, flagshipProjects } from './data/projectsData';
+import { projectCategories, getCategoryMeta } from './data/projectCategories';
+import { resolveAssetPath, handleImageError } from './utils/assetHelper';
 import { testimonialsData } from './data/testimonialsData';
 import { articlesData } from './data/articlesData';
+import { leadhunterCaseStudy } from './data/caseStudies/leadhunter';
+import { voiceAgentCaseStudy } from './data/caseStudies/voiceAgent';
+import { whatsappAutomationCaseStudy } from './data/caseStudies/whatsappAutomation';
+import { getProjectMedia } from './data/projectMedia';
+import { deploymentsData } from './data/deployments';
+import FeaturedProducts from './components/projects/FeaturedProducts';
+import CaseStudyView from './components/projects/CaseStudyView';
 import TiltCard from './components/TiltCard';
 import InteractiveBackground from './components/InteractiveBackground';
 import DevTerminal from './components/DevTerminal';
 import ScrollReveal from './components/ScrollReveal';
+
+const allCaseStudies = [leadhunterCaseStudy, voiceAgentCaseStudy, whatsappAutomationCaseStudy];
 
 // ==========================================
 // CONFIGURATIONS
@@ -31,7 +42,12 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navDropdownOpen, setNavDropdownOpen] = useState(false);
+  const navDropdownRef = useRef(null);
   const [activeSection, setActiveSection] = useState('hero');
+  const [activeCaseStudyId, setActiveCaseStudyId] = useState(null);
+
+  const isMoreActive = ['services', 'skills', 'certifications', 'testimonials', 'articles'].includes(activeSection);
 
   const categoryCounts = {
     all: projectsData.length,
@@ -49,11 +65,17 @@ export default function App() {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase().trim();
     const matchesTitle = project.title.toLowerCase().includes(query);
-    const matchesTagline = project.tagline.toLowerCase().includes(query);
-    const matchesDesc = project.description.toLowerCase().includes(query);
-    const matchesTech = project.techStack.some(t => t.toLowerCase().includes(query));
-    return matchesTitle || matchesTagline || matchesDesc || matchesTech;
+    const matchesTagline = (project.tagline || '').toLowerCase().includes(query);
+    const matchesDesc = (project.cardDescription || project.description || '').toLowerCase().includes(query);
+    const matchesProblem = (project.problem || '').toLowerCase().includes(query);
+    const matchesTech = project.techStack && project.techStack.some(t => t.toLowerCase().includes(query));
+    const matchesAudience = project.intendedUsers && project.intendedUsers.some(u => u.toLowerCase().includes(query));
+    return matchesTitle || matchesTagline || matchesDesc || matchesProblem || matchesTech || matchesAudience;
   });
+
+  const currentModalIndex = selectedProject ? filteredProjects.findIndex(p => p.id === selectedProject.id) : -1;
+  const prevProject = currentModalIndex > 0 ? filteredProjects[currentModalIndex - 1] : (filteredProjects.length > 0 ? filteredProjects[filteredProjects.length - 1] : null);
+  const nextProject = currentModalIndex >= 0 && currentModalIndex < filteredProjects.length - 1 ? filteredProjects[currentModalIndex + 1] : (filteredProjects.length > 0 ? filteredProjects[0] : null);
 
   const [greeting, setGreeting] = useState('Welcome 👋');
   const typewriterTimerRef = useRef(null);
@@ -174,10 +196,36 @@ export default function App() {
     };
   }, [showWelcomePopup, selectedProject, selectedArticle, mobileMenuOpen]);
 
+  // Close nav dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (navDropdownRef.current && !navDropdownRef.current.contains(e.target)) {
+        setNavDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Global keyboard listener for modal dismissal (Escape) and navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (navDropdownOpen) setNavDropdownOpen(false);
+        if (selectedProject) setSelectedProject(null);
+        if (selectedArticle) setSelectedArticle(null);
+        if (mobileMenuOpen) setMobileMenuOpen(false);
+        if (showWelcomePopup) setShowWelcomePopup(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navDropdownOpen, selectedProject, selectedArticle, mobileMenuOpen, showWelcomePopup]);
+
   // Scroll-spy: track which section is in view
   useEffect(() => {
     const sectionIds = [
-      'hero', 'about', 'github', 'services', 'skills',
+      'hero', 'about', 'github', 'services', 'skills', 'featured-products',
       'projects', 'testimonials', 'experience', 'certifications', 'articles', 'contact'
     ];
     const observer = new IntersectionObserver(
@@ -250,6 +298,63 @@ export default function App() {
     }
   };
 
+  // Listen to hash changes for deep linking to case studies (#/case-study/:id)
+  useEffect(() => {
+    const parseHash = () => {
+      const hash = window.location.hash || '';
+      const match = hash.match(/^#\/case-study\/(leadhunter|voice-agent|whatsapp-automation)/);
+      if (match) {
+        setActiveCaseStudyId(match[1]);
+      } else {
+        setActiveCaseStudyId(null);
+      }
+    };
+
+    parseHash();
+    window.addEventListener('hashchange', parseHash);
+    return () => window.removeEventListener('hashchange', parseHash);
+  }, []);
+
+  const handleSelectCaseStudy = (id) => {
+    window.location.hash = `#/case-study/${id}`;
+    setActiveCaseStudyId(id);
+  };
+
+  const handleBackToPortfolio = () => {
+    window.location.hash = '#featured-products';
+    setActiveCaseStudyId(null);
+    setTimeout(() => {
+      document.getElementById('featured-products')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
+
+  // If a deep case study route is active, render dedicated CaseStudyView
+  if (activeCaseStudyId) {
+    const currentStudy = allCaseStudies.find((s) => s.id === activeCaseStudyId) || leadhunterCaseStudy;
+    const mediaKey =
+      activeCaseStudyId === 'voice-agent'
+        ? 'voiceAgent'
+        : activeCaseStudyId === 'whatsapp-automation'
+        ? 'whatsappAutomation'
+        : 'leadhunter';
+    const media = getProjectMedia(import.meta.env.BASE_URL)[mediaKey] || [];
+    const deployments = deploymentsData[mediaKey] || [];
+
+    return (
+      <>
+        <div className="top-scroll-progress-bar" style={{ width: `${scrollProgress}%` }} aria-hidden="true"></div>
+        <CaseStudyView
+          study={currentStudy}
+          deployments={deployments}
+          gallery={media}
+          onBack={handleBackToPortfolio}
+          onNavigateStudy={handleSelectCaseStudy}
+          allStudies={allCaseStudies}
+        />
+        <DevTerminal onNavigateCaseStudy={handleSelectCaseStudy} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -293,7 +398,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 4. Header & Navbar Navigation */}
+      {/* 4. Well-Organized Header & Responsive Navigation */}
       <header className={`header ${headerScrolled ? 'scrolled' : ''}`}>
         <div className="logo">
           <a href="#hero">R<span>aunak</span></a>
@@ -306,27 +411,110 @@ export default function App() {
           aria-hidden="true"
         ></div>
 
-        <nav className={`navbar ${mobileMenuOpen ? 'active' : ''}`}>
+        {/* Desktop Navbar (Clean, Decongested, High Information Architecture) */}
+        <nav className="desktop-navbar" aria-label="Main Navigation">
+          <ul className="desktop-nav-links">
+            <li>
+              <a href="#about" className={`nav-link ${activeSection === 'about' ? 'active' : ''}`}>About</a>
+            </li>
+            <li>
+              <a href="#featured-products" className={`nav-link ${activeSection === 'featured-products' ? 'active' : ''}`}>
+                <span className="nav-flagship-pill">AI</span> Flagship
+              </a>
+            </li>
+            <li>
+              <a href="#projects" className={`nav-link ${activeSection === 'projects' ? 'active' : ''}`}>Creations</a>
+            </li>
+            <li>
+              <a href="#experience" className={`nav-link ${activeSection === 'experience' ? 'active' : ''}`}>Experience</a>
+            </li>
+            <li className="nav-dropdown-item" ref={navDropdownRef}>
+              <button 
+                type="button"
+                className={`nav-dropdown-btn ${isMoreActive ? 'active' : ''}`}
+                onClick={() => setNavDropdownOpen(!navDropdownOpen)}
+                aria-expanded={navDropdownOpen}
+                aria-label="More navigation links"
+              >
+                Explore <i className={`fas fa-chevron-down nav-dropdown-arrow ${navDropdownOpen ? 'rotated' : ''}`}></i>
+              </button>
+              {navDropdownOpen && (
+                <div className="nav-dropdown-menu">
+                  <a href="#services" className={`dropdown-link ${activeSection === 'services' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-laptop-code"></i> <span>Services</span>
+                  </a>
+                  <a href="#skills" className={`dropdown-link ${activeSection === 'skills' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-layer-group"></i> <span>Tech Skills</span>
+                  </a>
+                  <a href="#certifications" className={`dropdown-link ${activeSection === 'certifications' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-certificate"></i> <span>Certifications</span>
+                  </a>
+                  <a href="#testimonials" className={`dropdown-link ${activeSection === 'testimonials' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-comment-dots"></i> <span>Feedback</span>
+                  </a>
+                  <a href="#articles" className={`dropdown-link ${activeSection === 'articles' ? 'active' : ''}`} onClick={() => setNavDropdownOpen(false)}>
+                    <i className="fas fa-newspaper"></i> <span>Articles</span>
+                  </a>
+                </div>
+              )}
+            </li>
+            <li>
+              <a href="#contact" className={`nav-link nav-contact-link ${activeSection === 'contact' ? 'active' : ''}`}>Contact</a>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Mobile Navigation Drawer (Structured by Section Groups) */}
+        <nav className={`navbar mobile-navbar ${mobileMenuOpen ? 'active' : ''}`} aria-label="Mobile Navigation Drawer">
           <div className="mobile-nav-header">
-            <span className="mobile-nav-title">Menu</span>
+            <span className="mobile-nav-title">
+              <i className="fas fa-compass" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Navigation
+            </span>
             <button className="mobile-nav-close" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">&times;</button>
           </div>
-          <ul className="nav-links">
-            <li><a href="#hero" className={`nav-link ${activeSection === 'hero' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Home</a></li>
-            <li><a href="#about" className={`nav-link ${activeSection === 'about' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>About</a></li>
-            <li><a href="#services" className={`nav-link ${activeSection === 'services' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Services</a></li>
-            <li><a href="#skills" className={`nav-link ${activeSection === 'skills' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Skills</a></li>
-            <li><a href="#projects" className={`nav-link ${activeSection === 'projects' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Projects</a></li>
-            <li><a href="#testimonials" className={`nav-link ${activeSection === 'testimonials' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Reviews</a></li>
-            <li><a href="#experience" className={`nav-link ${activeSection === 'experience' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Experience</a></li>
-            <li><a href="#certifications" className={`nav-link ${activeSection === 'certifications' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Certifications</a></li>
-            <li><a href="#articles" className={`nav-link ${activeSection === 'articles' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Articles</a></li>
-            <li><a href="#contact" className={`nav-link ${activeSection === 'contact' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Contact</a></li>
-          </ul>
+
+          <div className="mobile-nav-content">
+            <div className="mobile-nav-group">
+              <div className="mobile-nav-group-title">Core</div>
+              <ul className="nav-links">
+                <li><a href="#hero" className={`nav-link ${activeSection === 'hero' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-home"></i> Home</a></li>
+                <li><a href="#about" className={`nav-link ${activeSection === 'about' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-user"></i> About</a></li>
+                <li><a href="#contact" className={`nav-link ${activeSection === 'contact' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-envelope"></i> Contact</a></li>
+              </ul>
+            </div>
+
+            <div className="mobile-nav-group">
+              <div className="mobile-nav-group-title">Work & Products</div>
+              <ul className="nav-links">
+                <li>
+                  <a href="#featured-products" className={`nav-link ${activeSection === 'featured-products' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                    <i className="fas fa-star" style={{ color: '#fbbf24' }}></i> Flagship Products
+                  </a>
+                </li>
+                <li>
+                  <a href="#projects" className={`nav-link ${activeSection === 'projects' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                    <i className="fas fa-layer-group"></i> All Creations ({projectsData.length})
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mobile-nav-group">
+              <div className="mobile-nav-group-title">Credentials & Content</div>
+              <ul className="nav-links">
+                <li><a href="#services" className={`nav-link ${activeSection === 'services' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-laptop-code"></i> Services</a></li>
+                <li><a href="#skills" className={`nav-link ${activeSection === 'skills' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-code"></i> Skills</a></li>
+                <li><a href="#experience" className={`nav-link ${activeSection === 'experience' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-briefcase"></i> Experience</a></li>
+                <li><a href="#certifications" className={`nav-link ${activeSection === 'certifications' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-certificate"></i> Certifications</a></li>
+                <li><a href="#testimonials" className={`nav-link ${activeSection === 'testimonials' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-comment-dots"></i> Feedback</a></li>
+                <li><a href="#articles" className={`nav-link ${activeSection === 'articles' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}><i className="fas fa-newspaper"></i> Articles</a></li>
+              </ul>
+            </div>
+          </div>
 
           <div className="mobile-drawer-actions">
             <a href={import.meta.env.BASE_URL + "resume.html"} className="btn-resume-view mobile-resume-link" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)}>
-              <i className="fas fa-eye"></i> Live Resume
+              <i className="fas fa-eye"></i> View Resume
             </a>
             <a href={import.meta.env.BASE_URL + "assets/images/Raunak_Resume.pdf"} className="btn-resume mobile-resume-link" download="Raunak_Sharma_Resume.pdf" onClick={() => setMobileMenuOpen(false)}>
               <i className="fas fa-download"></i> Download PDF
@@ -334,12 +522,27 @@ export default function App() {
           </div>
         </nav>
 
+        {/* Header Right Actions */}
         <div className="header-right">
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
             <i className={theme === 'light' ? 'fas fa-sun' : 'fas fa-moon'}></i>
           </button>
-          <a href={import.meta.env.BASE_URL + "resume.html"} className="btn-resume-view" target="_blank" rel="noopener noreferrer">View Resume <i className="fas fa-eye"></i></a>
-          <a href={import.meta.env.BASE_URL + "assets/images/Raunak_Resume.pdf"} className="btn-resume" download="Raunak_Sharma_Resume.pdf">Download <i className="fas fa-download"></i></a>
+          
+          <div className="resume-btn-group">
+            <a href={import.meta.env.BASE_URL + "resume.html"} className="btn-resume-view btn-resume-compact" target="_blank" rel="noopener noreferrer">
+              <i className="fas fa-file-alt"></i> Resume
+            </a>
+            <a 
+              href={import.meta.env.BASE_URL + "assets/images/Raunak_Resume.pdf"} 
+              className="btn-resume btn-resume-download-pill" 
+              download="Raunak_Sharma_Resume.pdf" 
+              title="Download Resume PDF" 
+              aria-label="Download Resume PDF"
+            >
+              <i className="fas fa-download"></i>
+            </a>
+          </div>
+
           <button className={`hamburger ${mobileMenuOpen ? 'active' : ''}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu" aria-expanded={mobileMenuOpen}>
             <span className="bar"></span>
             <span className="bar"></span>
@@ -715,6 +918,12 @@ export default function App() {
         </div>
       </section>
 
+      {/* 7.5. Featured Flagship Products Showcase */}
+      <FeaturedProducts
+        flagshipList={flagshipProjects}
+        onSelectCaseStudy={handleSelectCaseStudy}
+      />
+
       {/* 8. Projects Section with 3D Tilt Cards */}
       <section id="projects" className="projects-section">
         <div className="container">
@@ -768,30 +977,17 @@ export default function App() {
 
               {/* Project Category Filter Tabs with Live Counts */}
               <div className="project-filters">
-                <button
-                  className={`filter-tab ${projectFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setProjectFilter('all')}
-                >
-                  All Projects <span className="filter-count">{categoryCounts.all}</span>
-                </button>
-                <button
-                  className={`filter-tab ${projectFilter === 'fullstack' ? 'active' : ''}`}
-                  onClick={() => setProjectFilter('fullstack')}
-                >
-                  Full-Stack & AI <span className="filter-count">{categoryCounts.fullstack}</span>
-                </button>
-                <button
-                  className={`filter-tab ${projectFilter === 'java' ? 'active' : ''}`}
-                  onClick={() => setProjectFilter('java')}
-                >
-                  Java & SQL <span className="filter-count">{categoryCounts.java}</span>
-                </button>
-                <button
-                  className={`filter-tab ${projectFilter === 'frontend' ? 'active' : ''}`}
-                  onClick={() => setProjectFilter('frontend')}
-                >
-                  Frontend & Design <span className="filter-count">{categoryCounts.frontend}</span>
-                </button>
+                {projectCategories.filter(c => c.id !== 'featured').map((cat) => (
+                  <button
+                    key={cat.id}
+                    className={`filter-tab ${projectFilter === cat.id ? 'active' : ''}`}
+                    onClick={() => setProjectFilter(cat.id)}
+                    aria-label={`Filter projects by ${cat.label}`}
+                  >
+                    <i className={cat.icon} style={{ marginRight: '6px' }}></i>
+                    {cat.label} <span className="filter-count">{categoryCounts[cat.id] || 0}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Live Results Counter & Reset Action */}
@@ -818,36 +1014,61 @@ export default function App() {
               {filteredProjects.length > 0 ? (
                 filteredProjects.map((project) => (
                   <TiltCard className={`project-card card-${project.category}`} key={project.id} onClick={() => setSelectedProject(project)}>
-                    <div className="project-card-header">
-                      <div>
-                        <span className="project-badge">{project.category}</span>
-                        {project.featured && (
-                          <span className="project-featured-tag">
-                            <i className="fas fa-star"></i> Featured
-                          </span>
-                        )}
-                      </div>
-                      <div className="project-icon-wrapper">
-                        <i className={
-                          project.category === 'fullstack' ? 'fas fa-laptop-code' :
-                            project.category === 'frontend' ? 'fab fa-react' : 'fab fa-java'
-                        }></i>
-                      </div>
+                    {/* Visual Card Banner Thumbnail */}
+                    <div className="project-card-image-wrap">
+                      <img 
+                        src={resolveAssetPath(project.thumbnail)} 
+                        alt={`${project.title} Preview Banner`} 
+                        className="project-card-img"
+                        loading="lazy"
+                        onError={(e) => handleImageError(e)}
+                      />
+                      <span className={`project-card-status-pill status-${(project.status === 'Deployed' || project.status === 'Hosted (GH Pages)') ? 'live' : 'ready'}`}>
+                        <span className="status-dot"></span>
+                        {project.status || 'Complete'}
+                      </span>
                     </div>
-                    <h3 className="project-card-title">{project.title}</h3>
-                    <p className="project-card-desc">{project.tagline}</p>
-                    <div className="project-card-tech">
-                      {project.techStack.map((tech, index) => (
-                        <span className="tech-tag" key={index}>{tech}</span>
-                      ))}
-                    </div>
-                    <div className="project-card-actions">
-                      <button className="project-card-btn">
-                        View Case Study <i className="fas fa-arrow-right"></i>
-                      </button>
-                      <div className="project-card-links" onClick={(e) => e.stopPropagation()}>
-                        {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i className="fab fa-github"></i></a>}
-                        {project.liveLink && <a href={project.liveLink} target="_blank" rel="noopener noreferrer" aria-label="Live Demo"><i className="fas fa-external-link-alt"></i></a>}
+
+                    <div className="project-card-inner">
+                      <div className="project-card-header">
+                        <div>
+                          <span className="project-badge">{project.category}</span>
+                          {project.featured && (
+                            <span className="project-featured-tag">
+                              <i className="fas fa-star"></i> Featured
+                            </span>
+                          )}
+                        </div>
+                        <div className="project-icon-wrapper">
+                          <i className={
+                            project.category === 'fullstack' ? 'fas fa-layer-group' :
+                              project.category === 'frontend' ? 'fab fa-react' : 'fab fa-java'
+                          }></i>
+                        </div>
+                      </div>
+                      <h3 className="project-card-title">{project.title}</h3>
+                      <p className="project-card-desc">{project.cardDescription || project.tagline}</p>
+                      <div className="project-card-tech">
+                        {project.techStack.map((tech, index) => (
+                          <span className="tech-tag" key={index}>{tech}</span>
+                        ))}
+                      </div>
+                      <div className="project-card-actions">
+                        <button className="project-card-btn" aria-label={`View full details for ${project.title}`}>
+                          Explore Details <i className="fas fa-arrow-right"></i>
+                        </button>
+                        <div className="project-card-links" onClick={(e) => e.stopPropagation()}>
+                          {project.githubLink && (
+                            <a href={project.githubLink} target="_blank" rel="noopener noreferrer" aria-label={`Source code for ${project.title}`}>
+                              <i className="fab fa-github"></i>
+                            </a>
+                          )}
+                          {project.liveLink && (
+                            <a href={project.liveLink} target="_blank" rel="noopener noreferrer" aria-label={`Live demo for ${project.title}`}>
+                              <i className="fas fa-external-link-alt"></i>
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </TiltCard>
@@ -870,23 +1091,107 @@ export default function App() {
         </div>
       </section>
 
-      {/* 9. Project Details Case Study Modal */}
+      {/* 9. Enhanced Project Details Case Study Modal */}
       {selectedProject && (
-        <div className="modal-overlay active" onClick={(e) => e.target.classList.contains('modal-overlay') && setSelectedProject(null)}>
-          <div className="modal-content">
-            <button className="modal-close-btn" onClick={() => setSelectedProject(null)} aria-label="Close details">&times;</button>
-            <div className="modal-body">
-              <span className="modal-badge">{selectedProject.category}</span>
-              <h2>{selectedProject.title}</h2>
-              <p className="tagline">{selectedProject.tagline}</p>
+        <div 
+          className="modal-overlay active" 
+          onClick={(e) => e.target.classList.contains('modal-overlay') && setSelectedProject(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedProject.title}
+        >
+          <div className="modal-content modal-content-wide">
+            {/* Visual Header Banner */}
+            <div className="modal-banner-wrap">
+              <img 
+                src={resolveAssetPath(selectedProject.thumbnail)} 
+                alt={`${selectedProject.title} header banner`} 
+                className="modal-banner-img"
+                onError={(e) => handleImageError(e)}
+              />
+              <button 
+                className="modal-close-btn" 
+                onClick={() => setSelectedProject(null)} 
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+              <div className="modal-banner-overlay-tags">
+                <span className="modal-badge">{selectedProject.category}</span>
+                <span className="modal-status-badge">
+                  <span className="status-dot"></span>
+                  {selectedProject.status || 'Complete'}
+                </span>
+              </div>
+            </div>
 
+            <div className="modal-body">
+              <div className="modal-header-meta">
+                <h2>{selectedProject.title}</h2>
+                <p className="tagline">{selectedProject.tagline}</p>
+              </div>
+
+              {/* Problem Statement */}
+              {selectedProject.problem && (
+                <div className="modal-section">
+                  <h3><i className="fas fa-bullseye" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Problem & Opportunity</h3>
+                  <p>{selectedProject.problem}</p>
+                </div>
+              )}
+
+              {/* Overview / Narrative */}
               <div className="modal-section">
-                <h3>Overview</h3>
+                <h3><i className="fas fa-align-left" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Overview</h3>
                 <p>{selectedProject.description}</p>
               </div>
 
+              {/* Target Audience / Use Cases */}
+              {selectedProject.intendedUsers && selectedProject.intendedUsers.length > 0 && (
+                <div className="modal-section">
+                  <h3><i className="fas fa-users" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Target Audience & Use Cases</h3>
+                  <ul className="modal-audience-list">
+                    {selectedProject.intendedUsers.map((user, idx) => (
+                      <li key={idx}><i className="fas fa-check-circle"></i> {user}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Key Features & Capabilities */}
+              {selectedProject.keyFeatures && selectedProject.keyFeatures.length > 0 && (
+                <div className="modal-section">
+                  <h3><i className="fas fa-star" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Key Features & Capabilities</h3>
+                  <ul className="modal-features-list">
+                    {selectedProject.keyFeatures.map((feat, idx) => (
+                      <li key={idx}>{feat}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Technical Architecture & Workflow */}
+              {selectedProject.workflow && (
+                <div className="modal-section">
+                  <h3><i className="fas fa-project-diagram" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Architecture & Flow</h3>
+                  <div className="modal-workflow-box">
+                    <pre><code>{selectedProject.workflow}</code></pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Engineering Challenges & Learnings */}
+              {selectedProject.challenges && (
+                <div className="modal-section">
+                  <h3><i className="fas fa-lightbulb" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Engineering Challenges & Learnings</h3>
+                  <div className="modal-challenges-box">
+                    <p>{selectedProject.challenges}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tech Stack */}
               <div className="modal-section">
-                <h3>Tech Stack</h3>
+                <h3><i className="fas fa-code" style={{ color: 'var(--accent-gold, #f59e0b)', marginRight: '8px' }}></i> Technology Stack</h3>
                 <div className="modal-tech-stack">
                   {selectedProject.techStack.map((tech, idx) => (
                     <span className="tech-tag" key={idx}>{tech}</span>
@@ -894,18 +1199,44 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="modal-section">
-                <h3>Key Features</h3>
-                <ul className="modal-features-list">
-                  {selectedProject.keyFeatures.map((feat, idx) => (
-                    <li key={idx}>{feat}</li>
-                  ))}
-                </ul>
-              </div>
+              {/* Footer Links & Navigation Controls */}
+              <div className="modal-footer-container">
+                <div className="modal-primary-links">
+                  {selectedProject.liveLink && (
+                    <a href={selectedProject.liveLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                      Live Demo <i className="fas fa-external-link-alt"></i>
+                    </a>
+                  )}
+                  {selectedProject.githubLink && (
+                    <a href={selectedProject.githubLink} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                      Source Code <i className="fab fa-github"></i>
+                    </a>
+                  )}
+                </div>
 
-              <div className="modal-footer-actions">
-                {selectedProject.liveLink && <a href={selectedProject.liveLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Live Demo <i className="fas fa-external-link-alt"></i></a>}
-                {selectedProject.githubLink && <a href={selectedProject.githubLink} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">Source Code <i className="fab fa-github"></i></a>}
+                {filteredProjects.length > 1 && (
+                  <div className="modal-nav-controls">
+                    <button 
+                      className="modal-nav-btn" 
+                      onClick={() => prevProject && setSelectedProject(prevProject)}
+                      title={`Previous: ${prevProject?.title}`}
+                      aria-label="Previous project"
+                    >
+                      <i className="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span className="modal-nav-counter">
+                      {currentModalIndex + 1} / {filteredProjects.length}
+                    </span>
+                    <button 
+                      className="modal-nav-btn" 
+                      onClick={() => nextProject && setSelectedProject(nextProject)}
+                      title={`Next: ${nextProject?.title}`}
+                      aria-label="Next project"
+                    >
+                      Next <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1344,7 +1675,7 @@ export default function App() {
           <p>&copy; 2026 Raunak Sharma. Crafted with precision & purpose.</p>
         </div>
       </footer>
-      <DevTerminal />
+      <DevTerminal onNavigateCaseStudy={handleSelectCaseStudy} />
     </>
   );
 }

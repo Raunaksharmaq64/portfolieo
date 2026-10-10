@@ -522,3 +522,63 @@ body.light-theme .terminal-line.hire {
   text-shadow: none;
 }
 
+/* Autocomplete suggestions bar */
+.terminal-suggestions-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px dashed rgba(251, 191, 36, 0.3);
+  border-radius: 4px;
+  margin-bottom: 0.25rem;
+}
+
+.suggestions-label {
+  font-size: 0.72rem;
+  color: #fbbf24;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.terminal-suggestion-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  color: #34d399;
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.terminal-suggestion-pill:hover {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: #34d399;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+body.light-theme .terminal-suggestions-bar {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+body.light-theme .suggestions-label {
+  color: #b45309;
+}
+
+body.light-theme .terminal-suggestion-pill {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #047857;
+}
+
+body.light-theme .terminal-suggestion-pill:hover {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+
