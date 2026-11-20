@@ -15,7 +15,7 @@ export const candidateProfile = {
   education: {
     institution: "Lakshmi Narain College of Technology & Science (LNCTS), Bhopal",
     degree: "Bachelor of Technology (B.Tech) in Computer Science & Engineering",
-    duration: "2023 – Present",
+    duration: "2025 – Present",
     coursework: [
       "Data Structures & Algorithms",
       "Object-Oriented Programming (Java)",
@@ -247,7 +247,7 @@ export function queryPortfolioKnowledge(userQuery) {
   // 9. Education
   if (q.includes("education") || q.includes("college") || q.includes("university") || q.includes("degree") || q.includes("lncts") || q.includes("bhopal")) {
     return {
-      text: "Raunak is pursuing a **Bachelor of Technology (B.Tech) in Computer Science & Engineering** at **Lakshmi Narain College of Technology & Science (LNCTS), Bhopal** (2023 – Present).\n\nRelevant academic coursework includes Data Structures & Algorithms, Object-Oriented Programming (Java), Relational Database Management Systems (SQL), and Software Engineering principles.",
+      text: "Raunak is pursuing a **Bachelor of Technology (B.Tech) in Computer Science & Engineering** at **Lakshmi Narain College of Technology & Science (LNCTS), Bhopal** (2025 – Present).\n\nRelevant academic coursework includes Data Structures & Algorithms, Object-Oriented Programming (Java), Relational Database Management Systems (SQL), and Software Engineering principles.",
       actions: [
         { label: "View Experience & Academic Background", hash: "#experience" },
         { label: "Download Resume PDF", url: "assets/images/Raunak_Resume.pdf" }
